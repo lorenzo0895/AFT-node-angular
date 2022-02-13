@@ -3,7 +3,7 @@ const sequelize = require('./sequalize');
 
 const Cheque = sequelize.define("Cheque", {
   id_cheque: {
-    type: UUIDV4,
+    type: DataTypes.STRING,
     defaultValue: UUIDV4,
     primaryKey: true,
     allowNull: false,

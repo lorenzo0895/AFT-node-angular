@@ -33,7 +33,7 @@ route.get('/filtro/fecha', (req, res) => {
     include: [{
       model: Caja,
       where: {
-        fecha_fecha: {[Op.between] : [desde , hasta ]}
+        fecha_fecha: { [Op.between]: [desde, hasta] }
       },
       attributes: ['id_caja', 'fecha_fecha', 'cliente_id_cliente'],
       include: [Cliente],
@@ -61,13 +61,25 @@ route.post('/', async (req, res) => {
     importe: importe,
     caja_id_caja: caja,
     pagado: false
+  }).then(async conceptoCreado => {
+    try {
+      let conceptoNombre = await Concepto.findByPk(conceptoCreado.concepto_id_concepto, {
+        attributes: ['concepto']
+      });
+      conceptoCreado.dataValues.concepto = conceptoNombre.dataValues;
+      res.json(conceptoCreado);
+    } catch (error) {
+      res.status(504).send({
+        message: 'Error al recargar el concepto.'
+      })
+    }
   })
-    .then(concepto => {
-      res.json(concepto);
+  .catch(err => {
+    res.status(504).send({
+      message: 'Error al guardar el concepto. ' + err.message
     })
-    .catch(err => {
-      res.send('Error al guardar concepto: ' + err);
-    });
+  });
+  
 });
 
 //cambia atributo 'pagado' por true o false

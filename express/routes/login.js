@@ -4,6 +4,26 @@ const route = express.Router();
 const Usuario = require('../models/usuario');
 const jwt = require('jsonwebtoken');
 
+route.get('/create-admin', async (req, res) => {
+  await Usuario.create({
+    username: 'admin',
+    fecha_alta: new Date(),
+    activo: true,
+    nombre: 'Super Admin',
+    password: await bcrypt.hash('admin', 12),
+    permiso_abrir_dias: true,
+    permiso_cerrar_dias: true,
+    permiso_cerrar_modificaciones: true,
+    permiso_ingresar: true,
+    permiso_modificar: true,
+    permiso_modificar_usuarios: true
+  }).then(usuario => {
+    res.json(usuario);
+  }).catch(error => {
+    res.json(error);
+  })
+});
+
 route.post('/login', async (req, res) => {
   const { username, password } = req.body;
   await Usuario.findOne({
@@ -19,6 +39,7 @@ route.post('/login', async (req, res) => {
         exp: Math.floor(Date.now() / 1000) + (60 * 30),
         data: usuario
       }, 'SeCrEtO-918273');
+      console.log({token})
       res.json({token});
       return;
     }

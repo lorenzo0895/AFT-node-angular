@@ -6,6 +6,7 @@ const Cliente = require('../models/cliente');
 const ConceptoLista = require('../models/ConceptoLista');
 const Concepto = require('../models/concepto');
 const { Op } = require('sequelize');
+const cajaService = require('../services/cajaService');
 
 route.get('/', (req, res) => {
   Caja.findAll({
@@ -50,7 +51,7 @@ route.get('/filtro/fecha', (req, res) => {
   let { desde, hasta } = req.query;
   Caja.findAll({
     where: {
-      fecha_fecha: {[Op.between] : [desde , hasta ]}
+      fecha_fecha: { [Op.between]: [desde, hasta] }
     },
     include: [Cliente, Cheque],
     order: [['id_caja', 'ASC']]
@@ -62,53 +63,41 @@ route.get('/filtro/fecha', (req, res) => {
 });
 
 route.post('/', async (req, res) => {
-  const {
-    cliente,
-    detalle,
-    fecha,
-    efectivo,
-    transferencia,
-    cheques
-  } = req.body;
-  await Caja.create({
-    cliente_id_cliente: cliente,
-    detalle: detalle,
-    fecha_fecha: fecha,
-    efectivo: efectivo,
-    transferencia: transferencia,
-    activo: true
-  })
-  .then(caja => {
-    cheques.forEach(async el => {
-      console.log(el);
-      let cheque = await Cheque.findByPk(el.id_cheque);
-      console.log(cheque);
-      cheque.update({
-        caja_id_caja: caja.id_caja
-      });
-      cheque.save();
+  const { cliente, detalle, fecha, efectivo, transferencia, cheques } = req.body;
+  try {
+    await cajaService.nuevaCaja(cliente, detalle, fecha, efectivo, transferencia, cheques);
+    res.json('Caja cargada correctamente');
+  } catch (error) {
+    res.status(404).json({
+      message: error.message
     });
-    res.json(caja);
-  })
-  .catch(err => {
-    res.send('Error al cargar el comprobante de caja: ' + err)
-  });
+  }
 });
 
 //Cerrar caja
-route.patch('/:id', async (req, res) => {
-  const id = req.params.id;
-  const cajaAEditar = await Caja.findByPk(id);
-  cajaAEditar.update({
-    activo: false
-  });
-  cajaAEditar.save()
-    .then(caja => {
-      res.json(caja);
-    })
-    .catch(err => {
-      res.send('Error al editar el comprobante de caja: ' + err)
+route.patch('/', async (req, res) => {
+  const id = req.body.id;
+  try {
+    const caja = await cajaService.cerrarCaja(id);
+    res.json(caja);
+  } catch (error) {
+    res.status(504).send({
+      message: error.message
     });
+  }
+});
+
+route.patch('/detalle', async (req, res) => {
+  const { id, detalle } = req.body;
+  console.log(id, detalle);
+  try {
+    const caja = await cajaService.editarDetalle(id, detalle);
+    res.json(caja);
+  } catch (error) {
+    res.status(504).send({
+      message: error.message
+    });
+  }
 });
 
 module.exports = route;

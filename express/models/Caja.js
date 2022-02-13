@@ -25,8 +25,8 @@ const Caja = sequelize.define("caja", {
 );
 
 Caja.hasMany(Cheque, {sourceKey: 'id_caja', foreignKey: 'caja_id_caja'});
-Caja.hasMany(ConceptoLista, {sourceKey: 'id_caja', foreignKey: 'caja_id_caja'});
-ConceptoLista.hasOne(Caja, {sourceKey: 'caja_id_caja', foreignKey: 'id_caja'});
+Caja.hasMany(ConceptoLista, {sourceKey: 'id_caja', constraints: false, foreignKey: 'caja_id_caja'});
+ConceptoLista.hasOne(Caja, {sourceKey: 'caja_id_caja',  foreignKey: 'id_caja'});
 
 Caja.belongsTo(Cliente, {targetKey:'id_cliente', foreignKey: 'cliente_id_cliente'});
 Caja.belongsTo(Fecha, {targetKey:'fecha', foreignKey: 'fecha_fecha'});

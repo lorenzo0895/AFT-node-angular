@@ -1,9 +1,20 @@
 const express = require('express');
+const sequalize = require('./models/sequalize');
 const app = express();
 const port = process.env.port || 3000;
 const db = require('./models/sequalize');
 
 app.use(express.json());
+// app.use((err, req, res, next) => {
+//   res.status(500);
+//   res.render('error', { error: err });
+// });
+
+// const sync = async () => {
+//   await sequalize.sync();
+// }
+
+// sync();
 
 db.authenticate()
   .then(() => console.log('Exito al conectar a BD.'))

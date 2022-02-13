@@ -4,6 +4,7 @@ const Fecha = require('../models/fecha');
 const multer = require('multer');
 const Caja = require('../models/Caja');
 const Cheque = require('../models/Cheque');
+const service = require('../services/fechaService');
 
 const fileStorageEngine = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -16,7 +17,6 @@ const fileStorageEngine = multer.diskStorage({
 
 const upload = multer({ storage: fileStorageEngine }).single('file');
 
-
 route.get('/', (req, res) => {
   Fecha.findAll()
     .then(fechas => {
@@ -27,39 +27,27 @@ route.get('/', (req, res) => {
     });
 });
 
-route.get('/activo', (req, res) => {
-  Fecha.findAll({
-    where: {
-      activo: 1
-    },
-    attributes: ['fecha']
-  })
-    .then(fechas => {
-      res.json(fechas);
+route.get('/activo', async (req, res) => {
+  try {
+    const abiertos = await service.findOpened();
+    res.json(abiertos);
+  } catch (error) {
+    res.status(404).json({
+      message: error.message
     })
-    .catch(err => {
-      res.send('Error: ' + err);
-    });
+  }
 });
 
 route.get('/suma-dia/:fecha', async (req, res) => {
   const fecha = req.params.fecha;
-  await Caja.findAll({
-    where: {
-      fecha_fecha: fecha
-    },
-    include: [Cheque]
-  }).then(cajas => {
-    let suma = cajas.reduce((acc, item) => {
-      let sumaCheques = item.Cheques.reduce((acc, item) => {
-        return acc + item.importe;
-      }, 0);
-      return acc + item.efectivo + item.transferencia + sumaCheques;
-    }, 0);
+  try {
+    const suma = await service.sumaDia(fecha);
     res.json(suma);
-  }).catch(err => {
-    res.send('Error al buscar la fecha' + err);
-  });
+  } catch (error) {
+    res.status(404).json({
+      message: error.message
+    })
+  }
 });
 
 route.get('/:id', (req, res) => {
@@ -75,28 +63,24 @@ route.get('/:id', (req, res) => {
 
 route.post('/', async (req, res) => {
   const { fecha } = req.body;
-  await Fecha.create({
-    fecha: fecha,
-    activo: true,
-    sobrante: null
-  })
-    .then(fecha => {
-      res.json(fecha);
+  try {
+    await service.nuevaFecha(fecha);
+    res.end();
+  } catch (error) {
+    res.status(404).json({
+      message: error.message
     })
-    .catch(err => {
-      res.send('Error al cargar fecha: ' + err);
-    });
+  }
 });
 
 route.patch('/', upload, async (req, res) => {
 
   const { fecha, sobrante } = req.body;
-
   const fechaAEditar = await Fecha.findByPk(fecha);
   fechaAEditar.update({
     activo: false,
     sobrante: sobrante,
-    name_file: req.file.filename
+    name_file: req.hasOwnProperty('file') ? req.file.filename : null
   });
   fechaAEditar.save()
     .then(fecha => {

@@ -3,7 +3,7 @@ const sequelize = require('./sequalize');
 
 const Cliente = sequelize.define("cliente", {
   id_cliente: {
-    type: DataTypes.UUIDV4,
+    type: DataTypes.STRING,
     defaultValue: UUIDV4,
     primaryKey: true,
     allowNull: false,
